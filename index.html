@@ -597,10 +597,49 @@
     outline: none;
   }
 
+
+  /* ===== BANNER ADSTERRA 320x50 ===== */
+  .adsterra-banner-shell{
+    width:100%;
+    height:50px;
+    min-height:50px;
+    flex:0 0 50px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    background:var(--bg);
+  }
+  .adsterra-banner-inner{
+    width:320px;
+    height:50px;
+    max-width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+
 </style>
 </head>
 <body>
 <div class="app">
+  <!-- Banner Adsterra 320x50 -->
+  <div class="adsterra-banner-shell" aria-label="Publicidad">
+    <div class="adsterra-banner-inner">
+      <script>
+        atOptions = {
+          'key' : 'd09954b55fe1c4f575e1edd707d1f139',
+          'format' : 'iframe',
+          'height' : 50,
+          'width' : 320,
+          'params' : {}
+        };
+      </script>
+      <script src="https://www.highperformanceformat.com/d09954b55fe1c4f575e1edd707d1f139/invoke.js"></script>
+    </div>
+  </div>
+
   <div class="content">
     <section id="tab-ultimo" class="tab active">
       <div class="phone">
