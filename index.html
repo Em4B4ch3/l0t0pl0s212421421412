@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="es" translate="no">
+<html lang="es">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -596,11 +596,12 @@
   select:focus{
     outline: none;
   }
+
 </style>
 </head>
 <body>
 <div class="app">
-<div class="content">
+  <div class="content">
     <section id="tab-ultimo" class="tab active">
       <div class="phone">
         <header class="header">
@@ -903,10 +904,48 @@
 
   const STORAGE_THEME = "lotoplus_tema_v1";
   const STORAGE_JUGADAS = "lotoplus_mis_jugadas_v1";
-  const STORAGE_RESULTADOS = "lotoplus_resultados_cache_v1";
-  const API_URL = "https://lotoplus-backend-yc37mo.abacusai.app/api/loto-plus/resultados";
 
-  var HISTORIAL_COMPLETO = [
+  const HISTORIAL_COMPLETO = [
+
+{
+  fechaTexto:"12/08/2026",
+  numeroSorteo:"3908",
+  pozoAcumuladoTexto:"$ 19.233.000.000",
+  numeroPlus:"03",
+  juegos:[
+    {nombre:"Tradicional", numeros:["02","04","07","14","30","43"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 3.375.366.748"},{aciertos:"5", ganadores:"6", premio:"$ 2.463.952"},{aciertos:"4", ganadores:"320", premio:"$ 9.240"}]},
+    {nombre:"Match", numeros:["01","09","11","22","23","30"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 1.243.267.374"},{aciertos:"5", ganadores:"16", premio:"$ 923.982"},{aciertos:"4", ganadores:"543", premio:"$ 5.445"}]},
+    {nombre:"Desquite", numeros:["00","02","07","10","20","27"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 1.740.239.128"}]},
+    {nombre:"Sale o Sale", numeros:["19","21","27","35","37","42"], ganadores:[{aciertos:"5", ganadores:"1", premio:"$ 38.079.252"}]}
+  ]
+},
+
+{
+  fechaTexto:"08/08/2026",
+  numeroSorteo:"3907",
+  pozoAcumuladoTexto:"$ 18.685.000.000",
+  numeroPlus:"07",
+  juegos:[
+    {nombre:"Tradicional", numeros:["01","14","15","17","39","41"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 3.321.244.228"},{aciertos:"5", ganadores:"5", premio:"$ 4.587.795"},{aciertos:"4", ganadores:"393", premio:"$ 11.674"}]},
+    {nombre:"Match", numeros:["05","11","17","20","36","39"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 1.189.144.854"},{aciertos:"5", ganadores:"11", premio:"$ 2.085.361"},{aciertos:"4", ganadores:"684", premio:"$ 6.707"}]},
+    {nombre:"Desquite", numeros:["21","22","27","29","30","35"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 1.679.682.462"}]},
+    {nombre:"Sale o Sale", numeros:["09","16","26","27","30","36"], ganadores:[{aciertos:"5", ganadores:"12", premio:"$ 4.923.770"}]}
+  ]
+},
+
+{
+  fechaTexto:"05/08/2026",
+  numeroSorteo:"3906",
+  pozoAcumuladoTexto:"$ 17.842.000.000",
+  numeroPlus:"06",
+  juegos:[
+    {nombre:"Tradicional", numeros:["07","16","18","28","31","37"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 3.228.612.068"},{aciertos:"5", ganadores:"4", premio:"$ 3.905.802"},{aciertos:"4", ganadores:"297", premio:"$ 10.521"}]},
+    {nombre:"Match", numeros:["01","16","20","21","32","37"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 1.096.512.694"},{aciertos:"5", ganadores:"3", premio:"$ 5.207.737"},{aciertos:"4", ganadores:"232", premio:"$ 13.468"}]},
+    {nombre:"Desquite", numeros:["04","21","25","26","40","43"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 1.576.038.088"}]},
+    {nombre:"Sale o Sale", numeros:["02","05","16","17","18","38"], ganadores:[{aciertos:"5", ganadores:"7", premio:"$ 5.748.800"}]}
+  ]
+},
+
 {
   fechaTexto:"01/08/2026",
   numeroSorteo:"3905",
@@ -1107,200 +1146,7 @@
 }
 ];
 
-  var ULTIMO_SORTEO = HISTORIAL_COMPLETO[0];
-
-  /* ==== Actualización de resultados (a prueba de fallos, compatible WebView) ====
-     Reglas: nunca dejar la pantalla vacía, nunca borrar lo local sin datos
-     válidos nuevos, y nunca romper el render inicial por errores de red.
-     MERGE: siempre combinar servidor+caché+local, dedup por numeroSorteo,
-     ordenar del más nuevo al más viejo, mantener máximo 10. ==== */
-  var _MODALIDADES = ["Tradicional","Match","Desquite","Sale o Sale"];
-  /* Copia inmutable del historial embebido en el HTML. Sirve como respaldo
-     permanente para completar cuando servidor o caché traigan menos de 10. */
-  var _HISTORIAL_LOCAL = [];
-  (function(){
-    var i;
-    for(i=0;i<HISTORIAL_COMPLETO.length;i++){
-      _HISTORIAL_LOCAL.push(HISTORIAL_COMPLETO[i]);
-    }
-  })();
-
-  function _contarGanadores(s){
-    var t = 0, i;
-    if(s && s.juegos && s.juegos.length){
-      for(i=0;i<s.juegos.length;i++){
-        if(s.juegos[i] && s.juegos[i].ganadores){ t += s.juegos[i].ganadores.length; }
-      }
-    }
-    return t;
-  }
-  function _textoNoVacio(v){ return typeof v === "string" && v.length > 0; }
-  /* Un sorteo es válido solo si tiene fecha, número, Plus, pozo y las 4
-     modalidades, cada una con exactamente 6 números. Así nunca se muestra
-     ni se guarda un sorteo incompleto. */
-  function _sorteoValido(s){
-    if(!s){ return false; }
-    if(!_textoNoVacio(s.numeroSorteo)){ return false; }
-    if(!_textoNoVacio(s.fechaTexto)){ return false; }
-    if(!_textoNoVacio(s.pozoAcumuladoTexto)){ return false; }
-    if(typeof s.numeroPlus === "undefined" || s.numeroPlus === null || String(s.numeroPlus).length === 0){ return false; }
-    if(!s.juegos || s.juegos.length < 4){ return false; }
-    var i, k, encontrada;
-    for(k=0;k<_MODALIDADES.length;k++){
-      encontrada = null;
-      for(i=0;i<s.juegos.length;i++){
-        if(s.juegos[i] && s.juegos[i].nombre === _MODALIDADES[k]){ encontrada = s.juegos[i]; break; }
-      }
-      if(!encontrada){ return false; }
-      if(!encontrada.numeros || encontrada.numeros.length !== 6){ return false; }
-    }
-    return true;
-  }
-  /* Devuelve solo los sorteos válidos de un array. NO aplica slice —
-     el slice a 10 lo hace _mergeHistorial al final. */
-  function _filtrarValidos(h){
-    if(!h || typeof h.length !== "number" || h.length === 0){ return []; }
-    var out = [], i;
-    for(i=0;i<h.length;i++){
-      if(_sorteoValido(h[i])){ out.push(h[i]); }
-    }
-    return out;
-  }
-  /* Limpia un historial: filtra válidos y devuelve hasta 10. Null si vacío. */
-  function _historialLimpio(h){
-    var f = _filtrarValidos(h);
-    if(f.length === 0){ return null; }
-    return f.slice(0,10);
-  }
-  function _historialValido(h){
-    return _historialLimpio(h) !== null;
-  }
-  /* MERGE: combina múltiples fuentes de sorteos, deduplica por numeroSorteo
-     (conservando la versión con más ganadores), ordena de más nuevo a más
-     viejo y devuelve máximo 10. Así si el servidor trae 8, los 2 faltantes
-     se completan con el historial local embebido. */
-  function _mergeHistorial(){
-    var fuentes = arguments;
-    var mapa = {}; /* clave: numeroSorteo → sorteo con más ganadores */
-    var i, j, arr, s, num;
-    for(i=0;i<fuentes.length;i++){
-      arr = fuentes[i];
-      if(!arr || typeof arr.length !== "number"){ continue; }
-      for(j=0;j<arr.length;j++){
-        s = arr[j];
-        if(!_sorteoValido(s)){ continue; }
-        num = s.numeroSorteo;
-        if(!mapa[num]){
-          mapa[num] = s;
-        } else {
-          /* si hay duplicado, conservar el que tenga más ganadores */
-          if(_contarGanadores(s) > _contarGanadores(mapa[num])){
-            mapa[num] = s;
-          }
-        }
-      }
-    }
-    /* Convertir mapa a array y ordenar de más nuevo a más viejo */
-    var resultado = [];
-    for(num in mapa){
-      if(mapa.hasOwnProperty(num)){ resultado.push(mapa[num]); }
-    }
-    resultado.sort(function(a,b){
-      return parseInt(b.numeroSorteo,10) - parseInt(a.numeroSorteo,10);
-    });
-    return resultado.slice(0,10);
-  }
-  function _esMejor(nuevo, actual){
-    if(!_sorteoValido(nuevo)){ return false; }
-    if(!actual){ return true; }
-    var nN = parseInt(nuevo.numeroSorteo,10);
-    var nA = parseInt(actual.numeroSorteo,10);
-    if(isNaN(nN)){ return false; }
-    if(isNaN(nA)){ return true; }
-    if(nN > nA){ return true; }
-    if(nN < nA){ return false; }
-    return _contarGanadores(nuevo) > _contarGanadores(actual);
-  }
-  function _rerenderResultados(){
-    try{ renderUltimo(); }catch(e){}
-    try{ renderUltimoDetalles(); }catch(e){}
-    try{ renderUltimosSelectSorteos(); }catch(e){}
-    try{ renderUltimosResultado(); }catch(e){}
-  }
-  /* Aplica un historial externo (servidor o caché) COMBINÁNDOLO con el
-     historial local embebido y el HISTORIAL_COMPLETO actual. Así nunca
-     se pierden sorteos que el HTML ya tenía. */
-  function _aplicarHistorial(h){
-    var merged = _mergeHistorial(h, HISTORIAL_COMPLETO, _HISTORIAL_LOCAL);
-    if(merged.length === 0){ return false; }
-    HISTORIAL_COMPLETO = merged;
-    ULTIMO_SORTEO = HISTORIAL_COMPLETO[0];
-    _rerenderResultados();
-    return true;
-  }
-  /* Guarda en localStorage el historial MERGEADO completo (hasta 10 sorteos
-     válidos). Así el caché siempre tiene todos los sorteos disponibles. */
-  function _guardarCache(h, ultimaActualizacion, estado){
-    /* Mergear con local para que el caché nunca tenga menos que el HTML */
-    var merged = _mergeHistorial(h, HISTORIAL_COMPLETO, _HISTORIAL_LOCAL);
-    if(merged.length === 0){ return; }
-    try{
-      localStorage.setItem(STORAGE_RESULTADOS, JSON.stringify({
-        ok: true,
-        ultimaActualizacion: ultimaActualizacion || new Date().toISOString(),
-        estado: estado || null,
-        ultimoSorteo: merged[0],
-        historial: merged,
-        guardadoEn: new Date().toISOString()
-      }));
-    }catch(e){}
-  }
-  /* Lee el historial guardado. Si la caché está dañada o incompleta, la ignora
-     (devuelve null) y la app sigue con los resultados locales del HTML. */
-  function _leerCache(){
-    try{
-      var raw = localStorage.getItem(STORAGE_RESULTADOS);
-      if(!raw){ return null; }
-      var data = JSON.parse(raw);
-      if(!data){ return null; }
-      var validos = _filtrarValidos(data.historial);
-      if(validos.length > 0){ return validos; }
-    }catch(e){}
-    return null;
-  }
-  /* Consulta el servidor en segundo plano con XMLHttpRequest (sin fetch/async).
-     Cualquier error se ignora silenciosamente y se conserva lo ya visible.
-     Nunca sobrescribe datos buenos con datos vacíos, incompletos o de error.
-     El resultado del servidor se MERGEA con el historial local, así si el
-     servidor trae 8 sorteos y el local tiene 10, se muestran 10. */
-  function _consultarServidor(){
-    try{
-      if(typeof navigator !== "undefined" && navigator.onLine === false){ return; }
-      var xhr = new XMLHttpRequest();
-      xhr.open("GET", API_URL, true);
-      try{ xhr.timeout = 12000; }catch(e){}
-      xhr.onreadystatechange = function(){
-        if(xhr.readyState === 4){
-          try{
-            if(xhr.status >= 200 && xhr.status < 300){
-              var data = JSON.parse(xhr.responseText);
-              if(data && data.ok !== false){
-                var validos = _filtrarValidos(data.historial);
-                if(validos.length > 0){
-                  /* Siempre mergear: combina servidor + actual + local */
-                  _aplicarHistorial(validos);
-                  _guardarCache(validos, data.ultimaActualizacion, data.estado);
-                }
-              }
-            }
-          }catch(e){}
-        }
-      };
-      xhr.onerror = function(){};
-      xhr.ontimeout = function(){};
-      xhr.send();
-    }catch(e){}
-  }
+  const ULTIMO_SORTEO = HISTORIAL_COMPLETO[0];
 
   function fmt2(v){ return String(v).padStart(2,"0"); }
   function sortNums(arr){ return (arr || []).map(fmt2).sort((a,b)=>Number(a)-Number(b)); }
@@ -2304,9 +2150,6 @@
     initPicker();
     initEventos();
     cargarJugadas();
-
-    /* 1) Render inmediato con los resultados locales del HTML: la pantalla
-       SIEMPRE muestra datos, aunque no haya internet ni servidor. */
     renderUltimo();
     renderUltimoDetalles();
     renderListaJugadas();
@@ -2315,34 +2158,9 @@
     renderUltimosResultado();
     showUltimoScreen("main");
     showJugScreen("main");
-
-    /* 2) Si hay resultados guardados de una consulta previa, usarlos (re-render).
-       Si algo falla, se conserva lo local ya mostrado. */
-    try{
-      var hCache = _leerCache();
-      if(hCache){ _aplicarHistorial(hCache); }
-    }catch(e){}
-
-    /* 3) Recién ahora, en segundo plano, intentar traer datos más nuevos.
-       Cualquier error de red/servidor se ignora y no afecta lo visible. */
-    try{ _consultarServidor(); }catch(e){}
-    try{
-      if(typeof window !== "undefined" && window.addEventListener){
-        window.addEventListener("online", _consultarServidor);
-      }
-    }catch(e){}
   }
 
-  try{
-    init();
-  }catch(e){
-    /* Salvaguarda final: si init falla por algo, asegurar los resultados locales. */
-    try{ renderUltimo(); }catch(_e){}
-    try{ renderUltimoDetalles(); }catch(_e){}
-    try{ renderUltimosSelectSorteos(); }catch(_e){}
-    try{ renderUltimosResultado(); }catch(_e){}
-    try{ showUltimoScreen("main"); }catch(_e){}
-  }
+  init();
 })();
 </script>
 </body>
