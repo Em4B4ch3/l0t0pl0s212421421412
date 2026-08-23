@@ -684,9 +684,9 @@
               <button class="btn-secondary" id="btn-volver-ultimos">← Volver</button>
               <h2 class="title2" style="margin-top:10px">Últimos 10 sorteos</h2>
               <div style="margin-top:12px">
-                <div class="small" style="font-weight:900;margin-bottom:6px">Elegí una jugada</div>
+                <div class="small" style="font-weight:900;margin-bottom:6px">Elegí una jugada (opcional)</div>
                 <select id="ultimos-select-jugada" class="select">
-                  <option value="">— Seleccionar —</option>
+                  <option value="">— Ver sin jugada —</option>
                 </select>
                 <button class="btn-add" id="btn-ultimos-custom" style="margin-top:10px">Elegir números</button>
                 <div id="ultimos-pick" class="section-body" style="margin-top:10px"></div>
@@ -1809,7 +1809,7 @@
   function llenarSelectJugadas(){
     const sel = document.getElementById("ultimos-select-jugada");
     const prev = sel.value;
-    sel.innerHTML = '<option value="">— Seleccionar —</option>' +
+    sel.innerHTML = '<option value="">— Ver sin jugada —</option>' +
       jugadas.map((j,i) => '<option value="'+i+'">'+ escapeHtml(j.nombre || ("Jugada " + (i+1))) +' • Plus '+ fmt2(j.plus) +'</option>').join("");
     if(jugadas[prev]) sel.value = prev;
   }
@@ -1829,12 +1829,31 @@
   function renderUltimosResultado(){
     const pick = getUltimosPickActual();
     const cont = document.getElementById("ultimos-resultado");
-    if(!pick){
-      cont.innerHTML = '<div class="small center">Elegí una jugada o cargá números.</div>';
-      return;
-    }
     const lista = HISTORIAL_COMPLETO.slice(0,10);
     const sorteo = lista[Number(document.getElementById("ultimos-select-sorteo").value) || 0];
+
+    if(!sorteo){
+      cont.innerHTML = '<div class="small center">No hay sorteos cargados.</div>';
+      return;
+    }
+
+    if(!pick){
+      cont.innerHTML =
+        '<div class="card">' +
+          '<div class="center" style="font-weight:900;font-size:16px">Detalle del sorteo</div>' +
+          '<div class="center" style="margin-top:6px;font-weight:900">' + escapeHtml(sorteo.fechaTexto) + ' • Sorteo ' + sorteo.numeroSorteo + '</div>' +
+          '<div class="center" style="margin-top:6px;font-weight:900">Plus del sorteo: ' + sorteo.numeroPlus + '</div>' +
+          '<div class="center" style="margin-top:8px;font-weight:800;font-size:13px;color:var(--muted)">Resultados oficiales sin comparación de jugada.</div>' +
+          (sorteo.juegos || []).map(j => (
+            '<div class="section" style="margin-top:10px">' +
+              '<div class="section-header">' + escapeHtml(j.nombre || '') + '</div>' +
+              '<div class="section-body">' + buildBallsHTML(j.numeros || []) + '</div>' +
+            '</div>'
+          )).join("") +
+        '</div>';
+      return;
+    }
+
     const ana = analizarJugadaEnSorteo(pick, sorteo);
     const pickSet = new Set(sortNums(pick.numeros));
     cont.innerHTML =
