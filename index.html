@@ -906,6 +906,19 @@
   const HISTORIAL_COMPLETO = [
 
 {
+  fechaTexto:"23/09/2026",
+  numeroSorteo:"3920",
+  pozoAcumuladoTexto:"$ 25.615.000.000",
+  numeroPlus:"01",
+  juegos:[
+    {nombre:"Tradicional", numeros:["00","02","13","20","29","44"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 4.054.944.913"},{aciertos:"5", ganadores:"1", premio:"$ 15.438.773"},{aciertos:"4", ganadores:"169", premio:"$ 18.271"}]},
+    {nombre:"Match", numeros:["04","11","23","26","28","36"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 1.922.845.539"},{aciertos:"5", ganadores:"8", premio:"$ 1.929.847"},{aciertos:"4", ganadores:"468", premio:"$ 6.598"}]},
+    {nombre:"Desquite", numeros:["01","12","17","34","39","43"], ganadores:[{aciertos:"6", ganadores:"Vacante", premio:"$ 2.473.856.589"}]},
+    {nombre:"Sale o Sale", numeros:["01","04","12","37","39","40"], ganadores:[{aciertos:"4", ganadores:"171", premio:"$ 232.553"}]}
+  ]
+},
+
+{
   fechaTexto:"19/09/2026",
   numeroSorteo:"3919",
   pozoAcumuladoTexto:"$ 25.301.000.000",
@@ -1373,8 +1386,13 @@
     const n = nombreJuegoNormalizado(juego && juego.nombre);
 
     if(n.includes("sale o sale")){
-      if(hits >= 6) return "confirmado";
-      if(hits === 5) return "consulta";
+      const valsSale = [];
+      ((juego && juego.ganadores) || []).forEach(g => {
+        const raw = String(g.aciertos || "").replace(/[^\d]/g, "");
+        if(raw) valsSale.push(Number(raw));
+      });
+      if(valsSale.includes(hits)) return "confirmado";
+      if(hits >= 5) return "consulta";
       return "none";
     }
 
